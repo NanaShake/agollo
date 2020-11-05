@@ -1,0 +1,81 @@
+package client
+
+import (
+	"context"
+	"github.com/micro/micro/v3/service/client"
+	"github.com/wolfplus2048/mcbeam-plugins/v3/session"
+	"github.com/wolfplus2048/mcbeam-plugins/v3/session/codec/proto"
+	pb "github.com/wolfplus2048/mcbeam-plugins/v3/session/proto"
+)
+
+type srv struct {
+	opts              session.Options
+	gate              pb.McbGateService
+	uid               string
+	data              map[string]interface{}
+	frontendSrvID     string
+	frontendSessionID int64
+}
+
+func (s *srv) Init(opts ...session.Option) {
+	for _, o := range opts {
+		o(&s.opts)
+	}
+}
+func (s *srv) Options() session.Options {
+	return s.opts
+}
+func (s *srv) String() string {
+	return "session"
+}
+func (s *srv) UID() string {
+	return s.uid
+}
+func (s *srv) Bind(uid string) error {
+	if uid == "" {
+		return session.ErrIllegalUID
+	}
+
+	if s.UID() != "" {
+		return session.ErrSessionAlreadyBound
+	}
+	sessionData := &pb.Session{
+		Id:  s.frontendSessionID,
+		Uid: s.uid,
+	}
+	_, err := s.gate.Bind(context.Background(), sessionData)
+	return err
+}
+func (s *srv) Kick() error {
+	if s.UID() == "" {
+		return session.ErrNoUIDBind
+	}
+	_, err := s.gate.Kick(context.Background(), &pb.KickMsg{UserId: s.UID()})
+	return err
+}
+func (s *srv) PushSession() error {
+	return nil
+}
+func (s *srv) Push(route string, v interface{}) error {
+	b, err := proto.Marshal(v)
+	if err != nil {
+		return err
+	}
+	push := &pb.PushMsg{
+		Route: route,
+		Uid:   s.UID(),
+		Data:  b,
+	}
+	_, err = s.gate.Push(context.Background(), push)
+	return err
+}
+
+func NewSession(sid int64, fid string, uid string) session.Session {
+	s := &srv{
+		frontendSrvID:     fid,
+		frontendSessionID: sid,
+		uid:               uid,
+	}
+	s.gate = pb.NewMcbGateService("gate", client.DefaultClient)
+	return s
+}
