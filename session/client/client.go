@@ -15,6 +15,7 @@ type srv struct {
 	data              map[string]interface{}
 	frontendSrvID     string
 	frontendSessionID int64
+	closeCallback func()
 }
 
 func (s *srv) Init(opts ...session.Option) {
@@ -69,7 +70,6 @@ func (s *srv) Push(route string, v interface{}) error {
 	_, err = s.gate.Push(context.Background(), push)
 	return err
 }
-
 func NewSession(sid int64, fid string, uid string) session.Session {
 	s := &srv{
 		frontendSrvID:     fid,
