@@ -70,7 +70,7 @@ func (s *srv) Push(route string, v interface{}) error {
 func NewSession(opts ...session.Option) session.Session {
 	s := &srv{
 		data: make(map[string]interface{}),
-		gate: pb.NewMcbGateService("gate", client.DefaultClient)
+		gate: pb.NewMcbGateService("gate", client.DefaultClient),
 	}
 	for _, o := range opts {
 		o(&s.opts)

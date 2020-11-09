@@ -8,3 +8,5 @@ require (
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
 	google.golang.org/protobuf v1.25.0
 )
+
+replace github.com/micro/micro/v3 => github.com/wolfplus2048/micro/v3 v3.0.0-beta.7
