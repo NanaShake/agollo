@@ -11,10 +11,7 @@ import (
 type srv struct {
 	opts              session.Options
 	gate              pb.McbGateService
-	uid               string
 	data              map[string]interface{}
-	frontendSrvID     string
-	frontendSessionID int64
 }
 
 func (s *srv) Init(opts ...session.Option) {
@@ -29,7 +26,7 @@ func (s *srv) String() string {
 	return "session"
 }
 func (s *srv) UID() string {
-	return s.uid
+	return s.opts.Uid
 }
 func (s *srv) Bind(uid string) error {
 	if uid == "" {
@@ -40,8 +37,8 @@ func (s *srv) Bind(uid string) error {
 		return session.ErrSessionAlreadyBound
 	}
 	sessionData := &pb.Session{
-		Id:  s.frontendSessionID,
-		Uid: s.uid,
+		Id:  s.opts.Sid,
+		Uid: s.opts.Uid,
 	}
 	_, err := s.gate.Bind(context.Background(), sessionData)
 	return err
@@ -70,12 +67,13 @@ func (s *srv) Push(route string, v interface{}) error {
 	return err
 }
 
-func NewSession(sid int64, fid string, uid string) session.Session {
+func NewSession(opts ...session.Option) session.Session {
 	s := &srv{
-		frontendSrvID:     fid,
-		frontendSessionID: sid,
-		uid:               uid,
+		data: make(map[string]interface{}),
+		gate: pb.NewMcbGateService("gate", client.DefaultClient)
 	}
-	s.gate = pb.NewMcbGateService("gate", client.DefaultClient)
+	for _, o := range opts {
+		o(&s.opts)
+	}
 	return s
 }
